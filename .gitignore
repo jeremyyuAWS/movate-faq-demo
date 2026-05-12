@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Env vars
+.env
+.env.*
+!.env.example
+
+# Movate local state
+.movate/
+*.db
+*.db-journal
+
+# Office app lock files
+~$*
+
+# OS
+.DS_Store

@@ -1,0 +1,22 @@
+# Project-level policy for movate-faq-demo.
+#
+# Locks the model allow-list to vendors with cheap, reliable haiku-class
+# models suitable for this demo. Hard-caps per-run spend so a runaway
+# question can't blow the budget.
+
+policy:
+  allowed_providers:
+    - openai
+    - anthropic
+  deny_models:
+    - "openai/gpt-4o"          # too expensive for this demo
+    - "openai/o1"
+    - "openai/o3"
+    - "anthropic/claude-opus-4-5"
+  max_cost_per_run_usd: 0.50
+
+bench:
+  models:
+    - openai/gpt-4o-mini-2024-07-18
+    - anthropic/claude-haiku-4-5-20251001
+  runs: 3

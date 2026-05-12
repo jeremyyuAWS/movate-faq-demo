@@ -1,0 +1,38 @@
+name: agents
+
+# Validate each agent + run the manager's routing eval on every PR.
+# Catches schema / prompt / routing regressions before merge.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate-and-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install movate-cli
+        run: |
+          # Pinned at the major version this demo was developed against.
+          # Bump deliberately; re-run evals before merging the bump.
+          uv tool install --from git+https://github.com/jeremyyuAWS/movate-cli movate-cli
+
+      - name: Validate all agents
+        run: |
+          movate validate agents/manager --strict
+          movate validate agents/expert-scaffold --strict
+          movate validate agents/expert-eval-bench --strict
+          movate validate agents/expert-deploy-ops --strict
+
+      - name: Eval manager routing accuracy
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          movate eval agents/manager --gate 0.9 --runs 1

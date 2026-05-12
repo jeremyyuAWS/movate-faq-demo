@@ -1,0 +1,7 @@
+# Manager routing is deterministic — every question has exactly one
+# correct lane. Exact-match judging on the `classification` field is
+# the right call. No LLM-as-judge needed (and no cross-family rule to
+# worry about as a result).
+method: exact_match
+fields:
+  - classification
