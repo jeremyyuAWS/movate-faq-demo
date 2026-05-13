@@ -146,23 +146,54 @@ movate bench agents/manager \
 Output: a Rich table with latency p50/p95, cost per call, and routing
 accuracy per model. Pick the cheapest that meets your accuracy bar.
 
-## Run against a deployed runtime
+## Run against the live deployed demo
 
-If the demo is live on Azure:
+The 4 agents are deployed on Movate's dev Azure environment. Register
+the target once, then hit it from anywhere with `python ask.py --remote dev`:
 
 ```bash
-# Register the deployment (one-time)
-movate config add-target faq-demo \
-    --url https://movate-faq-api.<region>.azurecontainerapps.io \
-    --key-env MOVATE_FAQ_KEY \
+# 1. Get an API key from the runtime operator (or generate one with
+#    `movate auth create-key` if you have access). Set it in env so it
+#    doesn't land in ~/.movate/config.yaml on disk.
+export MOVATE_DEV_KEY="mvt_dev_..."
+
+# 2. Register the deployment (one-time per machine)
+movate config add-target dev \
+    --url https://movate-dev-api.victoriouswater-7958662f.eastus2.azurecontainerapps.io \
+    --key-env MOVATE_DEV_KEY \
     --set-active
 
-# Hit it
-python ask.py "How do I run a bench?" --remote faq-demo
+# 3. Confirm reachability
+movate doctor --target dev    # all green panel
+
+# 4. Hit the live demo
+python ask.py "How do I scaffold a classifier agent?" --remote dev
+python ask.py "How do I gate CI on eval pass rate?" --remote dev
+python ask.py "How do I deploy to Azure?" --remote dev
 ```
 
-`--remote` swaps local `movate run` for `movate submit --wait` — same
-script, hits the deployed runtime instead.
+`--remote` swaps local `movate run` for `movate submit --wait` against
+the deployed runtime — same script, same routing logic, same KB. The
+manager + experts run on Azure Container Apps (one `movate-dev-api`
+serving HTTP, one `movate-dev-worker` draining the job queue) with
+Postgres for state and Key Vault holding the provider API keys.
+
+Live latency: **0.9–4.0s per question end-to-end** (manager classify +
+expert answer). Cost: **<$0.001 per question**.
+
+### Sanity-check the deployed agents directly
+
+If you want to hit one agent at a time without the orchestrator:
+
+```bash
+movate submit manager '{"question":"How do I scaffold an agent?"}' --target dev --wait
+movate submit expert-scaffold '{"question":"How do I scaffold a classifier agent?"}' --target dev --wait
+movate submit expert-eval-bench '{"question":"How do I gate CI?"}' --target dev --wait
+movate submit expert-deploy-ops '{"question":"How do I deploy to Azure?"}' --target dev --wait
+```
+
+Each prints a small Rich verdict table with `job_id`, `run_id`, status,
+and end-to-end latency.
 
 ## Repo layout
 
